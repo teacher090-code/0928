@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>별과 우주: 연주시차 탐구 시뮬레이션 (Part 1: Step 1~3)</title>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --accent-color: #38bdf8;
+      --accent-hover: #0284c7;
+      --text-color: #f8fafc;
+      --text-muted: #94a3b8;
+      --correct-color: #22c55e;
+      --incorrect-color: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #334155;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      color: var(--accent-color);
+      margin-bottom: 8px;
+    }
+
+    .step-card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      border: 1px solid #334155;
+    }
+
+    .step-title {
+      font-size: 1.3rem;
+      color: var(--accent-color);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .step-badge {
+      background: #0369a1;
+      color: #fff;
+      font-size: 0.85rem;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-weight: bold;
+    }
+
+    canvas {
+      width: 100%;
+      height: 280px;
+      background-color: #020617;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      border: 1px solid #475569;
+      display: block;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      background: #0f172a;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .controls label { font-size: 0.95rem; font-weight: 500; }
+    .controls input[type="range"] { flex: 1; cursor: pointer; }
+
+    .btn {
+      background-color: var(--accent-color);
+      color: #0f172a;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn:hover { background-color: var(--accent-hover); color: #fff; }
+
+    .quiz-box, .essay-box {
+      background: #0f172a;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 16px;
+      border-left: 4px solid var(--accent-color);
+    }
+
+    .quiz-title, .essay-title {
+      font-weight: bold;
+      margin-bottom: 10px;
+      font-size: 1rem;
+    }
+
+    .ox-btns { display: flex; gap: 12px; margin-top: 8px; }
+    .ox-btn {
+      flex: 1;
+      padding: 10px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border: 1px solid #475569;
+      background: #1e293b;
+      color: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .ox-btn.selected { border-color: var(--accent-color); background: #0369a1; }
+
+    textarea {
+      width: 100%;
+      height: 80px;
+      background: #1e293b;
+      border: 1px solid #475569;
+      color: #fff;
+      padding: 10px;
+      border-radius: 6px;
+      resize: vertical;
+      font-family: inherit;
+      font-size: 0.95rem;
+    }
+    textarea:focus { outline: none; border-color: var(--accent-color); }
+
+    .feedback {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .feedback.correct { background: rgba(34, 197, 94, 0.2); color: var(--correct-color); border: 1px solid var(--correct-color); display: block; }
+    .feedback.partial { background: rgba(234, 179, 8, 0.2); color: #fde047; border: 1px solid #eab308; display: block; }
+    .feedback.incorrect { background: rgba(239, 68, 68, 0.2); color: var(--incorrect-color); border: 1px solid var(--incorrect-color); display: block; }
+
+    .nav-box {
+      text-align: center;
+      margin-top: 40px;
+      padding: 20px;
+      background: var(--card-bg);
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>🌌 연주시차 탐구 시뮬레이션</h1>
+    <p>현상을 직접 관찰하며 우주의 거리를 재는 원리를 스스로 발견해보세요.</p>
+  </header>
+
+  <!-- STEP 1 -->
+  <div class="step-card" id="step1">
+    <div class="step-title">
+      <span class="step-badge">STEP 1</span>
+      가까운 물체와 먼 물체의 위치 변화
+    </div>
+    <p style="margin-bottom: 12px; color: var(--text-muted);">
+      관찰자의 위치(좌/우)를 움직여보며, 가까운 나무(빨간색)와 먼 산(파란색)의 위치가 배경 대비 얼마나 달라 보이는지 관찰해보세요.
+    </p>
+
+    <canvas id="canvas1"></canvas>
+    <div class="controls">
+      <label for="pos1">관찰자 위치:</label>
+      <input type="range" id="pos1" min="-100" max="100" value="0">
+    </div>
+
+    <!-- OX 퀴즈 -->
+    <div class="quiz-box">
+      <div class="quiz-title">Q1. [OX 퀴즈] 관찰자가 이동할 때, 가까이 있는 물체일수록 배경에 대해 더 크게 위치가 변해 보인다.</div>
+      <div class="ox-btns">
+        <button class="ox-btn" onclick="checkOX(1, 'O')">O</button>
+        <button class="ox-btn" onclick="checkOX(1, 'X')">X</button>
+      </div>
+      <div id="ox-feedback-1" class="feedback"></div>
+    </div>
+
+    <!-- 서술형 정리 -->
+    <div class="essay-box">
+      <div class="essay-title">📝 스스로 정리하기</div>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">
+        위 시뮬레이션을 통해 관찰한 물체의 거리와 위치 변화(시차) 사이의 관계를 설명해보세요.
+      </p>
+      <textarea id="essay1" placeholder="자신이 알게 된 사실을 정리하여 적어보세요."></textarea>
+      <button class="btn" style="margin-top: 8px;" onclick="gradeEssay(1)">작성 완료 및 AI 채점</button>
+      <div id="essay-feedback-1" class="feedback"></div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step-card" id="step2">
+    <div class="step-title">
+      <span class="step-badge">STEP 2</span>
+      밤하늘의 별도 위치가 달라 보일까?
+    </div>
+    <p style="margin-bottom: 12px; color: var(--text-muted);">
+      사람이 걸어가며 밤하늘의 별을 관찰합니다. 버튼을 눌러 걸어가며 별의 위치 변화가 느껴지는지 확인해보세요.
+    </p>
+
+    <canvas id="canvas2"></canvas>
+    <div class="controls">
+      <button class="btn" onclick="movePerson2()">사람 이동시키기</button>
+      <span id="pos2-text" style="margin-left: 10px; font-size: 0.9rem;">이동 거리: 0 m</span>
+    </div>
+
+    <!-- OX 퀴즈 -->
+    <div class="quiz-box">
+      <div class="quiz-title">Q2. [OX 퀴즈] 별은 너무나 멀리 떨어져 있기 때문에 몇 걸음 걸어가는 정도로는 위치 변화를 거의 느낄 수 없다.</div>
+      <div class="ox-btns">
+        <button class="ox-btn" onclick="checkOX(2, 'O')">O</button>
+        <button class="ox-btn" onclick="checkOX(2, 'X')">X</button>
+      </div>
+      <div id="ox-feedback-2" class="feedback"></div>
+    </div>
+
+    <!-- 서술형 정리 -->
+    <div class="essay-box">
+      <div class="essay-title">📝 스스로 정리하기</div>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">
+        사람이 움직여도 별의 위치가 변해 보이지 않는 이유는 무엇인지 설명해보세요.
+      </p>
+      <textarea id="essay2" placeholder="자신이 생각한 이유를 적어보세요."></textarea>
+      <button class="btn" style="margin-top: 8px;" onclick="gradeEssay(2)">작성 완료 및 AI 채점</button>
+      <div id="essay-feedback-2" class="feedback"></div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step-card" id="step3">
+    <div class="step-title">
+      <span class="step-badge">STEP 3</span>
+      얼마나 멀리 이동해야 별의 위치 변화가 보일까?
+    </div>
+    <p style="margin-bottom: 12px; color: var(--text-muted);">
+      두 관측 지점 사이의 거리를 점점 늘려보세요. 관측 거리가 늘어남에 따라 별을 바라보는 시선 각도의 변화(시차)가 어떻게 달라지는지 관찰해보세요.
+    </p>
+
+    <canvas id="canvas3"></canvas>
+    <div class="controls">
+      <label for="dist3">관측 두 지점 사이 거리:</label>
+      <input type="range" id="dist3" min="1" max="100" value="10">
+      <span id="dist3-val" style="font-size: 0.9rem; font-weight: bold;">10 km</span>
+    </div>
+
+    <!-- OX 퀴즈 -->
+    <div class="quiz-box">
+      <div class="quiz-title">Q3. [OX 퀴즈] 관측하는 두 지점 사이의 거리가 멀어질수록, 별의 위치 변화를 측정하기 위한 시선 각도가 커진다.</div>
+      <div class="ox-btns">
+        <button class="ox-btn" onclick="checkOX(3, 'O')">O</button>
+        <button class="ox-btn" onclick="checkOX(3, 'X')">X</button>
+      </div>
+      <div id="ox-feedback-3" class="feedback"></div>
+    </div>
+
+    <!-- 서술형 정리 -->
+    <div class="essay-box">
+      <div class="essay-title">📝 스스로 정리하기</div>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">
+        까마득히 멀리 있는 별의 위치 변화(시차)를 명확하게 관찰하려면 관측 지점을 어떻게 설정해야 할지 정리해보세요.
+      </p>
+      <textarea id="essay3" placeholder="자신이 알게 된 내용을 적어보세요."></textarea>
+      <button class="btn" style="margin-top: 8px;" onclick="gradeEssay(3)">작성 완료 및 AI 채점</button>
+      <div id="essay-feedback-3" class="feedback"></div>
+    </div>
+  </div>
+
+  <div class="nav-box">
+    <p style="color: var(--text-muted);">Step 1~3 탐구를 완료했습니다!</p>
+    <p style="margin-top: 5px;">다음 단계(Step 4~6: 지구 공전과 연주시차의 발견) 코드가 이어서 제공됩니다.</p>
+  </div>
+</div>
+
+<script>
+  // --- 학생 데이터 저장 객체 (Step 10 출력을 위해 영구 저장) ---
+  const studentData = JSON.parse(localStorage.getItem('studentData') || '{}');
+
+  function saveData(step, type, question, answer, isCorrect, feedback) {
+    if (!studentData[`step${step}`]) studentData[`step${step}`] = {};
+    studentData[`step${step}`][type] = { question, answer, isCorrect, feedback };
+    localStorage.setItem('studentData', JSON.stringify(studentData));
+  }
+
+  // --- STEP 1 Canvas Render ---
+  const canvas1 = document.getElementById('canvas1');
+  const ctx1 = canvas1.getContext('2d');
+  const pos1Input = document.getElementById('pos1');
+
+  function drawStep1() {
+    canvas1.width = canvas1.clientWidth;
+    canvas1.height = canvas1.clientHeight;
+    const w = canvas1.width;
+    const h = canvas1.height;
+    const obsX = (parseInt(pos1Input.value) / 100) * (w / 4);
+
+    ctx1.clearRect(0, 0, w, h);
+
+    // 배경 모눈선
+    ctx1.strokeStyle = '#1e293b';
+    for (let x = 0; x < w; x += 40) {
+      ctx1.beginPath(); ctx1.moveTo(x, 0); ctx1.lineTo(x, h - 40); ctx1.stroke();
+    }
+
+    // 먼 산 (파란색)
+    const mountainX = w / 2 + obsX * 0.15;
+    ctx1.fillStyle = '#3b82f6';
+    ctx1.beginPath();
+    ctx1.moveTo(mountainX - 80, h - 40);
+    ctx1.lineTo(mountainX, h - 180);
+    ctx1.lineTo(mountainX + 80, h - 40);
+    ctx1.fill();
+
+    // 가까운 나무 (빨간색)
+    const treeX = w / 2 + obsX * 0.8;
+    ctx1.fillStyle = '#ef4444';
+    ctx1.fillRect(treeX - 10, h - 120, 20, 80);
+    ctx1.beginPath();
+    ctx1.arc(treeX, h - 130, 30, 0, Math.PI * 2);
+    ctx1.fillStyle = '#22c55e';
+    ctx1.fill();
+
+    // 관찰자 바닥
+    ctx1.fillStyle = '#334155';
+    ctx1.fillRect(0, h - 40, w, 40);
+
+    // 관찰자 (눈/시선)
+    const eyeX = w / 2 + obsX;
+    ctx1.fillStyle = '#fde047';
+    ctx1.beginPath();
+    ctx1.arc(eyeX, h - 20, 10, 0, Math.PI * 2);
+    ctx1.fill();
+
+    // 시선 안내선
+    ctx1.strokeStyle = 'rgba(253, 224, 71, 0.4)';
+    ctx1.setLineDash([4, 4]);
+    ctx1.beginPath(); ctx1.moveTo(eyeX, h - 20); ctx1.lineTo(treeX, h - 130); ctx1.stroke();
+    ctx1.beginPath(); ctx1.moveTo(eyeX, h - 20); ctx1.lineTo(mountainX, h - 180); ctx1.stroke();
+    ctx1.setLineDash([]);
+  }
+
+  pos1Input.addEventListener('input', drawStep1);
+  window.addEventListener('resize', drawStep1);
+  drawStep1();
+
+  // --- STEP 2 Canvas Render ---
+  const canvas2 = document.getElementById('canvas2');
+  const ctx2 = canvas2.getContext('2d');
+  let personPos2 = 0;
+
+  function drawStep2() {
+    canvas2.width = canvas2.clientWidth;
+    canvas2.height = canvas2.clientHeight;
+    const w = canvas2.width;
+    const h = canvas2.height;
+
+    ctx2.clearRect(0, 0, w, h);
+
+    // 밤하늘 별들
+    ctx2.fillStyle = '#ffffff';
+    const stars = [[0.2, 0.2], [0.5, 0.15], [0.8, 0.3], [0.35, 0.4]];
+    stars.forEach(s => {
+      ctx2.beginPath(); ctx2.arc(w * s[0], h * s[1], 2, 0, Math.PI * 2); ctx2.fill();
+    });
+
+    // 멀리 있는 대상 별 (노란 별)
+    const starX = w / 2;
+    const starY = 40;
+    ctx2.fillStyle = '#fde047';
+    ctx2.beginPath(); ctx2.arc(starX, starY, 6, 0, Math.PI * 2); ctx2.fill();
+
+    // 사람 위치 (걸어감)
+    const personX = w / 2 + (personPos2 * 3);
+    ctx2.fillStyle = '#38bdf8';
+    ctx2.fillRect(personX - 8, h - 40, 16, 30); // 몸통
+
+    // 시선 (사람 → 별)
+    ctx2.strokeStyle = 'rgba(56, 189, 248, 0.3)';
+    ctx2.beginPath(); ctx2.moveTo(personX, h - 40); ctx2.lineTo(starX, starY); ctx2.stroke();
+
+    document.getElementById('pos2-text').innerText = `이동 거리: ${personPos2} m`;
+  }
+
+  function movePerson2() {
+    personPos2 = (personPos2 + 5) % 40;
+    drawStep2();
+  }
+  window.addEventListener('resize', drawStep2);
+  drawStep2();
+
+  // --- STEP 3 Canvas Render ---
+  const canvas3 = document.getElementById('canvas3');
+  const ctx3 = canvas3.getContext('2d');
+  const dist3Input = document.getElementById('dist3');
+
+  function drawStep3() {
+    canvas3.width = canvas3.clientWidth;
+    canvas3.height = canvas3.clientHeight;
+    const w = canvas3.width;
+    const h = canvas3.height;
+    const distVal = parseInt(dist3Input.value);
+    document.getElementById('dist3-val').innerText = `${distVal * 10} km`;
+
+    ctx3.clearRect(0, 0, w, h);
+
+    const starX = w / 2;
+    const starY = 30;
+
+    // 먼 별
+    ctx3.fillStyle = '#fde047';
+    ctx3.beginPath(); ctx3.arc(starX, starY, 7, 0, Math.PI * 2); ctx3.fill();
+
+    // 두 관측 지점
+    const gap = (distVal / 100) * (w * 0.7);
+    const p1X = w / 2 - gap / 2;
+    const p2X = w / 2 + gap / 2;
+    const groundY = h - 30;
+
+    // 관측 지점 표시
+    ctx3.fillStyle = '#ef4444';
+    ctx3.beginPath(); ctx3.arc(p1X, groundY, 6, 0, Math.PI * 2); ctx3.fill();
+    ctx3.beginPath(); ctx3.arc(p2X, groundY, 6, 0, Math.PI * 2); ctx3.fill();
+
+    // 시선 연결
+    ctx3.strokeStyle = '#38bdf8';
+    ctx3.lineWidth = 1.5;
+    ctx3.beginPath(); ctx3.moveTo(p1X, groundY); ctx3.lineTo(starX, starY); ctx3.stroke();
+    ctx3.beginPath(); ctx3.moveTo(p2X, groundY); ctx3.lineTo(starX, starY); ctx3.stroke();
+
+    // 관측선 연결
+    ctx3.strokeStyle = '#475569';
+    ctx3.setLineDash([2, 2]);
+    ctx3.beginPath(); ctx3.moveTo(p1X, groundY); ctx3.lineTo(p2X, groundY); ctx3.stroke();
+    ctx3.setLineDash([]);
+  }
+
+  dist3Input.addEventListener('input', drawStep3);
+  window.addEventListener('resize', drawStep3);
+  drawStep3();
+
+  // --- OX 퀴즈 채점 ---
+  const oxAnswers = { 1: 'O', 2: 'O', 3: 'O' };
+  const oxExpl = {
+    1: '정답입니다! 관찰자가 위치를 이동할 때, 가까운 물체일수록 관찰 위치 변화에 따른 시차(위치 변화)가 더 크게 느껴집니다.',
+    2: '정답입니다! 별은 지구로부터 상상을 초월할 정도로 멀리 떨어져 있으므로, 몇 m 이동하는 것 수준으로는 위치 변화가 전혀 관측되지 않습니다.',
+    3: '정답입니다! 관측 지점 사이의 거리가 멀어질수록 별을 바라보는 두 시선 사이의 각도(시차)가 더 뚜렷하게 벌어집니다.'
+  };
+
+  function checkOX(step, choice) {
+    const isCorrect = (choice === oxAnswers[step]);
+    const fbEl = document.getElementById(`ox-feedback-${step}`);
+    
+    fbEl.className = `feedback ${isCorrect ? 'correct' : 'incorrect'}`;
+    fbEl.innerText = isCorrect ? oxExpl[step] : '다시 생각해보세요! 시뮬레이션을 다시 움직이며 관찰해봅시다.';
+
+    const qTitle = document.querySelector(`#step${step} .quiz-title`).innerText;
+    saveData(step, 'ox', qTitle, choice, isCorrect, fbEl.innerText);
+  }
+
+  // --- 유연한 AI 서술형 채점 엔진 ---
+  const essayKeywords = {
+    1: {
+      must: [['가깝', '가까운', '거리'], ['크', '많이', '커진', '심하']],
+      optional: ['시차', '위치', '변화', '이동'],
+      feedback: {
+        pass: '훌륭합니다! 가까운 물체일수록 위치 변화(시차)가 크다는 사실을 정확히 파악했습니다.',
+        partial: '좋은 시도입니다! "가까울수록" 그리고 "더 크게 변한다"는 관계를 조금 더 명확하게 표현해볼까요?',
+        fail: '시뮬레이션에서 관찰자 위치를 좌우로 움직였을 때 빨간 나무와 파란 산 중 어느 것이 더 크게 변했는지 다시 관찰해보세요.'
+      }
+    },
+    2: {
+      must: [['멀', '멀리', '거리'], ['작', '안', '없', '미세', '느낄 수']],
+      optional: ['너무', '우주', '거대'],
+      feedback: {
+        pass: '정확합니다! 별이 지구에서 까마득히 멀리 떨어져 있기 때문에 인간의 몇 걸음 정도로는 시차가 나타나지 않음을 이해했군요.',
+        partial: '별이 지구와 얼마큼 떨어져 있는지(거리)와 관련지어 이유를 조금 더 서술해보세요.',
+        fail: '별은 우리 눈앞의 물체와 달리 얼마나 멀리 있는지 생각해보세요.'
+      }
+    },
+    3: {
+      must: [['멀', '넓', '크', '늘어'], ['각도', '시차', '변화', '잘']],
+      optional: ['관측', '지점', '거리'],
+      feedback: {
+        pass: '완벽합니다! 먼 별의 시차를 관측하려면 관측 지점 사이의 거리가 매우 멀어야 한다는 원리를 깨달으셨군요.',
+        partial: '관측 지점 사이의 거리가 멀어질 때 별을 보는 각도가 어떻게 변하는지 함께 적어주세요.',
+        fail: '슬라이더를 오른쪽으로 늘려 관측 거리가 멀어질 때 삼각형 각도가 어떻게 되는지 확인해보세요.'
+      }
+    }
+  };
+
+  function gradeEssay(step) {
+    const text = document.getElementById(`essay${step}`).value.trim();
+    const fbEl = document.getElementById(`essay-feedback-${step}`);
+    const rule = essayKeywords[step];
+
+    if (text.length < 5) {
+      fbEl.className = 'feedback incorrect';
+      fbEl.innerText = '내용을 조금 더 자세히 작성해주세요. (최소 5자 이상)';
+      return;
+    }
+
+    // 필수 키워드 매칭 검사
+    let mustScore = 0;
+    rule.must.forEach(group => {
+      if (group.some(kw => text.includes(kw))) {
+        mustScore++;
+      }
+    });
+
+    let status = 'fail';
+    if (mustScore === rule.must.length) {
+      status = 'pass';
+    } else if (mustScore > 0) {
+      status = 'partial';
+    }
+
+    if (status === 'pass') {
+      fbEl.className = 'feedback correct';
+      fbEl.innerText = '✅ [AI 채점 - 통과] ' + rule.feedback.pass;
+    } else if (status === 'partial') {
+      fbEl.className = 'feedback partial';
+      fbEl.innerText = '⚠️ [AI 채점 - 보완 필요] ' + rule.feedback.partial;
+    } else {
+      fbEl.className = 'feedback incorrect';
+      fbEl.innerText = '❌ [AI 채점 - 재확인 필요] ' + rule.feedback.fail;
+    }
+
+    const qTitle = document.querySelector(`#step${step} .essay-title`).innerText;
+    saveData(step, 'essay', qTitle, text, status === 'pass', fbEl.innerText);
+  }
+</script>
+</body>
+</html>
