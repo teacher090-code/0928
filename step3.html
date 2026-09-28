@@ -530,28 +530,49 @@
 </script>
 </body>
 </html>
-<!-- HTML 하단에 추가 -->
+<!-- ================= [STEP 3 하단 이동 버튼 및 자동 잠금해제 스크립트] ================= -->
 <div style="margin-top: 30px; text-align: right;">
-  <button id="nextBtn" class="btn" onclick="goToNext()" disabled style="opacity: 0.5; cursor: not-allowed; background-color: #475569; color: #94a3b8; padding: 12px 24px; font-weight: bold; border-radius: 8px; border: none;">
+  <button id="nextBtn" class="btn" onclick="goToNext()" disabled style="opacity: 0.5; cursor: not-allowed; background-color: #475569; color: #94a3b8; padding: 12px 24px; font-weight: bold; border-radius: 8px; border: none; transition: all 0.3s;">
     🔒 STEP 3 정답을 맞히면 STEP 4로 이동할 수 있습니다
   </button>
 </div>
 
 <script>
-  // STEP 3 채점 완료(정답) 시 실행:
   function unlockNextStep() {
     const nextBtn = document.getElementById('nextBtn');
-    nextBtn.disabled = false;
-    nextBtn.style.opacity = '1';
-    nextBtn.style.cursor = 'pointer';
-    nextBtn.style.backgroundColor = '#38bdf8';
-    nextBtn.style.color = '#0f172a';
-    nextBtn.innerText = 'STEP 4: 별까지의 거리와 연주시차 측정 ➔';
+    if (nextBtn) {
+      nextBtn.disabled = false;
+      nextBtn.style.opacity = '1';
+      nextBtn.style.cursor = 'pointer';
+      nextBtn.style.backgroundColor = '#38bdf8';
+      nextBtn.style.color = '#0f172a';
+      nextBtn.innerText = 'STEP 4: 별까지의 거리와 연주시차 측정 ➔';
+    }
   }
 
   function goToNext() {
-    if (!document.getElementById('nextBtn').disabled) {
+    const nextBtn = document.getElementById('nextBtn');
+    if (nextBtn && !nextBtn.disabled) {
       location.href = 'step4.html';
     }
   }
+
+  const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+        const target = mutation.target;
+        if (target.classList.contains('correct')) {
+          unlockNextStep();
+        }
+      }
+    });
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const feedbackElements = document.querySelectorAll('.feedback, [id*="-feedback"], [id*="feedback"]');
+    feedbackElements.forEach(function(el) {
+      observer.observe(el, { attributes: true });
+    });
+  });
 </script>
+<!-- =================================================================================== -->
